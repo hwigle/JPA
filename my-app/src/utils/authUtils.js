@@ -6,7 +6,7 @@ const SKIP_VERIFY_KEY = 'skipAuthVerifyOnce';
 const storage = window.sessionStorage; // 개발 편의: 브라우저/탭 닫히면 자동 로그아웃
 
 /**
- * JWT 토큰을 localStorage에서 가져옵니다.
+ * JWT 토큰을 sessionStorage에서 가져옵니다.
  * @returns {string|null} 토큰 문자열 또는 null
  */
 export const getToken = () => {
@@ -14,7 +14,7 @@ export const getToken = () => {
 };
 
 /**
- * JWT 토큰을 localStorage에 저장하고 axios 기본 헤더에 설정합니다.
+ * JWT 토큰을 sessionStorage에 저장하고 axios 기본 헤더에 설정합니다.
  * @param {string} token - JWT 토큰
  */
 export const setToken = (token) => {
@@ -43,7 +43,7 @@ const consumeSkipVerifyOnce = () => {
 };
 
 /**
- * JWT 토큰을 localStorage에서 제거하고 axios 기본 헤더에서도 삭제합니다.
+ * JWT 토큰을 sessionStorage에서 제거하고 axios 기본 헤더에서도 삭제합니다.
  */
 export const removeToken = () => {
   storage.removeItem(TOKEN_KEY);

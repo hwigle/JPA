@@ -17,6 +17,6 @@ export const formatTimestamp = (timestamp) => {
     hour12: true // '오전/오후' 사용 (false로 하면 24시간제)
   };
   
-  // e.g., "2025. 10. 31. 오후 4:32"
+  // 예: "2025. 10. 31. 오후 4:32"
   return date.toLocaleString('ko-KR', options);
 };
