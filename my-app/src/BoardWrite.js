@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { API_ENDPOINTS } from './config/api';
 
 // --- 👇 [MUI 컴포넌트 import] ---
 import Box from '@mui/material/Box';
@@ -35,7 +36,7 @@ function BoardWrite() {
             return;
         }
         try {
-            const response = await axios.post('http://localhost:8080/api/board', form);
+            const response = await axios.post(API_ENDPOINTS.BOARD.CREATE, form);
             alert("게시글이 성공적으로 등록되었습니다.");
             navigate(`/detail/${response.data.id}`);
         } catch (error) {

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom'; // 1. Link를 RouterLink로 별명 부여
 import axios from 'axios';
+import { API_ENDPOINTS } from './config/api';
+import { isLoggedIn } from './utils/authUtils';
 
 // --- 👇 [MUI 컴포넌트 import] ---
 import Box from '@mui/material/Box';
@@ -18,7 +20,7 @@ import CircularProgress from '@mui/material/CircularProgress'; // 로딩 아이�
 function BoardList() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const isLoggedIn = !!localStorage.getItem('jwtToken');
+  const loggedIn = isLoggedIn();
   const [currentPage, setCurrentPage] = useState(0); 
   const [totalPages, setTotalPages] = useState(0);
 
@@ -26,7 +28,7 @@ function BoardList() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await axios.get(`http://localhost:8080/api/board?page=${currentPage}`);
+        const response = await axios.get(API_ENDPOINTS.BOARD.LIST(currentPage));
         const pageData = response.data;
         setList(pageData.content); 
         setTotalPages(pageData.totalPages); 
@@ -68,7 +70,7 @@ function BoardList() {
         📋 게시판 목록
       </Typography>
 
-      {isLoggedIn && (
+      {loggedIn && (
         // 3. <button> 대신 MUI <Button>
         <Button 
           component={RouterLink} // React Router의 Link 기능과 연결

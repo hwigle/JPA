@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link as RouterLink } from 'react-router-dom'; // Link 추가
+import { API_ENDPOINTS } from './config/api';
+import { setToken, removeToken, setSkipVerifyOnce } from './utils/authUtils';
 
 // --- 👇 [MUI 컴포넌트 import] ---
 import Box from '@mui/material/Box';
@@ -37,11 +39,12 @@ function Login() {
     }
 
     try {
-      const response = await axios.post('http://localhost:8080/api/auth/login', form);
+      const response = await axios.post(API_ENDPOINTS.AUTH.LOGIN, form);
       
       const token = response.data; 
-      localStorage.setItem('jwtToken', token); 
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setToken(token);
+      // 로그인 직후 최초 앱 초기화 시 토큰 검증을 1회 건너뛰기 위한 플래그
+      setSkipVerifyOnce();
       
       alert("로그인 성공!"); 
       navigate('/'); 
@@ -51,8 +54,7 @@ function Login() {
     } catch (error) {
       console.error("로그인 실패:", error);
       alert("아이디 또는 비밀번호가 일치하지 않습니다.");
-      localStorage.removeItem('jwtToken'); 
-      delete axios.defaults.headers.common['Authorization']; 
+      removeToken(); 
     }
   };
 

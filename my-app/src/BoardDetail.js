@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_ENDPOINTS } from './config/api';
+import { getCurrentUsername, getAuthHeaders } from './utils/authUtils';
+import { formatTimestamp } from './utils/dateUtils';
 
 // --- MUI 컴포넌트 import ---
 import Paper from '@mui/material/Paper';
@@ -17,53 +20,6 @@ import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 // --- MUI import 끝 ---
-
-// (헬퍼 함수) 현재 로그인한 사용자 이름 가져오기
-const getCurrentUsername = async () => {
-  const token = localStorage.getItem('jwtToken');
-  if (token) {
-    try {
-      // 'jwt-decode' 동적 import
-      const { jwtDecode } = await import('jwt-decode'); 
-      const decodedToken = jwtDecode(token);
-      return decodedToken.sub;
-    } catch (error) {
-      console.error("토큰 디코드 실패:", error);
-      return null;
-    }
-  }
-  return null;
-};
-
-// (헬퍼 함수) Axios 헤더 설정
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('jwtToken');
-  if (token) {
-    return { headers: { 'Authorization': `Bearer ${token}` } };
-  }
-  return {};
-};
-
-// --- 👇 [시간 포맷팅 수정] ---
-// (헬퍼 함수) 시간 포맷팅 (년. 월. 일. 오전/오후 시:분)
-const formatTimestamp = (timestamp) => {
-    if (!timestamp) return "";
-    const date = new Date(timestamp); 
-    
-    // 'ko-KR' 로케일을 사용하고, '초'를 제외한 옵션을 지정
-    const options = {
-        year: 'numeric',
-        month: '2-digit', // "10"
-        day: '2-digit',   // "31"
-        hour: '2-digit',  // "04"
-        minute: '2-digit',// "32"
-        hour12: true // '오전/오후' 사용 (false로 하면 24시간제)
-    };
-    
-    // e.g., "2025. 10. 31. 오후 4:32"
-    return date.toLocaleString('ko-KR', options); 
-};
-// --- [수정 끝] ---
 
 
 function BoardDetail() {
@@ -87,7 +43,7 @@ function BoardDetail() {
     try {
       // (로그인 안 해도 댓글은 보이도록 GET 요청은 헤더 없이 보냄)
       const response = await axios.get(
-        `http://localhost:8080/api/board/${boardId}/comments`
+        API_ENDPOINTS.COMMENT.LIST(boardId)
       );
       setComments(response.data);
     } catch (error) {
@@ -109,7 +65,7 @@ function BoardDetail() {
       try {
         // (게시글 읽기도 인증이 필요 없음 - permitAll)
         const postResponse = await axios.get(
-          `http://localhost:8080/api/board/${boardId}`
+          API_ENDPOINTS.BOARD.DETAIL(boardId)
         );
         const fetchedPost = postResponse.data;
         setPost(fetchedPost);
@@ -138,7 +94,7 @@ function BoardDetail() {
     if (window.confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
       try {
         await axios.delete(
-          `http://localhost:8080/api/board/${boardId}`,
+          API_ENDPOINTS.BOARD.DELETE(boardId),
           getAuthHeaders() // (삭제는 인증 필요)
         );
         alert("게시글이 성공적으로 삭제되었습니다.");
@@ -158,7 +114,7 @@ function BoardDetail() {
     }
     try {
       await axios.post(
-        `http://localhost:8080/api/board/${boardId}/comments`, 
+        API_ENDPOINTS.COMMENT.CREATE(boardId), 
         { content: newComment }, 
         getAuthHeaders() // (댓글 작성은 인증 필요)
       );
@@ -174,7 +130,7 @@ function BoardDetail() {
     if (window.confirm("이 댓글을 삭제하시겠습니까?")) {
       try {
         await axios.delete(
-          `http://localhost:8080/api/comments/${commentId}`,
+          API_ENDPOINTS.COMMENT.DELETE(commentId),
           getAuthHeaders() // (댓글 삭제는 인증 필요)
         );
         alert("댓글이 삭제되었습니다.");

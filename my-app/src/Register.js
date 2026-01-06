@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link as RouterLink } from 'react-router-dom'; // Link 추가
+import { API_ENDPOINTS } from './config/api';
 
 // --- 👇 [MUI 컴포넌트 import] ---
 import Box from '@mui/material/Box';
@@ -37,7 +38,7 @@ function Register() {
     }
 
     try {
-      await axios.post('http://localhost:8080/api/auth/register', form);
+      await axios.post(API_ENDPOINTS.AUTH.REGISTER, form);
       alert("회원가입이 성공적으로 완료되었습니다. 로그인 페이지로 이동합니다.");
       navigate('/login'); 
     } catch (error) {

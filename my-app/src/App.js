@@ -1,14 +1,15 @@
 import React from 'react';
-import { Routes, Route, Link as RouterLink, useNavigate } from 'react-router-dom'; // 1. Link를 RouterLink로 별명 부여
+import { Routes, Route, Link as RouterLink, useNavigate } from 'react-router-dom'; // Link를 RouterLink로 별명 부여
 import axios from 'axios';
+import { removeToken, isLoggedIn } from './utils/authUtils';
 
 // --- [MUI 컴포넌트 import] ---
-import Container from '@mui/material/Container'; // 전체 레이아웃을 감싸는 컨테이너
-import AppBar from '@mui/material/AppBar';     // 상단 내비게이션 바
-import Toolbar from '@mui/material/Toolbar';    // AppBar 안에 내용물을 넣는 영역
+import Container from '@mui/material/Container';   // 전체 레이아웃을 감싸는 컨테이너
+import AppBar from '@mui/material/AppBar';         // 상단 내비게이션 바
+import Toolbar from '@mui/material/Toolbar';       // AppBar 안에 내용물을 넣는 영역
 import Typography from '@mui/material/Typography'; // 텍스트 (h1, p 등)
-import Button from '@mui/material/Button';       // 버튼
-import Box from '@mui/material/Box';             // div와 비슷한 레이아웃용 박스
+import Button from '@mui/material/Button';         // 버튼
+import Box from '@mui/material/Box';               // div와 비슷한 레이아웃용 박스
 // --- [MUI import 끝] ---
 
 import Home from './Home';
@@ -23,19 +24,18 @@ function App() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem('jwtToken');
-    delete axios.defaults.headers.common['Authorization'];
+    removeToken();
     alert("로그아웃 되었습니다.");
     navigate('/');
   };
 
-  const isLoggedIn = !!localStorage.getItem('jwtToken');
+  const loggedIn = isLoggedIn();
 
   return (
     // 1. 가장 바깥을 <Container>로 감싸서 적절한 여백과 최대 너비를 줍니다.
     <Container maxWidth="lg">
       {/* 2. 상단 내비게이션 바 (AppBar) */}
-      <AppBar position="static" color="default" elevation={1} sx={{ mb: 4 }}> 
+      <AppBar position="static" color="default" elevation={1} sx={{ mb: 4 }}>
         <Toolbar>
           {/* 3. 제목 (Toolbar 안에서 왼쪽 정렬) */}
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
@@ -48,13 +48,13 @@ function App() {
           <Button component={RouterLink} to="/list" color="inherit">게시판</Button>
 
           {/* 5. 조건부 내비게이션 (MUI Button 사용) */}
-          {!isLoggedIn && (
+          {!loggedIn && (
             <>
               <Button component={RouterLink} to="/register" color="inherit">회원가입</Button>
               <Button component={RouterLink} to="/login" color="inherit">로그인</Button>
             </>
           )}
-          {isLoggedIn && (
+          {loggedIn && (
             <Button onClick={handleLogout} variant="contained" color="error">
               로그아웃
             </Button>
@@ -65,7 +65,7 @@ function App() {
       {/* 6. <Routes> 영역을 <Box>로 감싸서 위쪽 여백(mt: 4)을 줌 */}
       <Box sx={{ mt: 4 }}>
         <Routes>
-          <Route path="/" element={<Home />} /> 
+          <Route path="/" element={<Home />} />
           <Route path="/list" element={<BoardList />} />
           <Route path="/detail/:boardId" element={<BoardDetail />} />
           <Route path="/write" element={<BoardWrite />} />

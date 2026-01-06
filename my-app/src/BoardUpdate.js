@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
+import { API_ENDPOINTS } from './config/api';
 
 // --- 👇 [MUI 컴포넌트 import] ---
 import Box from '@mui/material/Box';
@@ -28,7 +29,7 @@ function BoardUpdate() {
     setLoading(true); // 👈 로딩 시작
     const fetchData = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/api/board/${boardId}`);
+        const response = await axios.get(API_ENDPOINTS.BOARD.DETAIL(boardId));
         setForm(response.data); 
       } catch (error) {
         console.error("데이터 로드 실패:", error);
@@ -55,7 +56,7 @@ function BoardUpdate() {
       return;
     }
     try {
-      await axios.put(`http://localhost:8080/api/board/${boardId}`, form);
+      await axios.put(API_ENDPOINTS.BOARD.UPDATE(boardId), form);
       alert("게시글이 성공적으로 수정되었습니다.");
       navigate(`/detail/${boardId}`); 
     } catch (error) {
