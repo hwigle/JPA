@@ -21,7 +21,7 @@
 
     <div class="d-flex justify-content-between align-items-end mb-4">
         <div>
-            <h2 class="fw-bold m-0">자유게시판</h2>
+            <h2 class="fw-bold m-0">게시글 목록</h2>
             <p class="text-muted m-0 mt-1">다양한 이야기를 나누어 보세요.</p>
         </div>
         <button class="btn btn-primary px-4 fw-bold shadow-sm" onclick="goToWrite()">글쓰기</button>
@@ -111,4 +111,44 @@
                 // 페이징 상태 업데이트
                 document.getElementById('pageInfo').innerText = `${currentPage + 1} / ${page.totalPages || 1}`;
                 document.getElementById('prevBtn').disabled = page.first;
-                document.getElementById('nextBtn').disabled = page.last ||
+                document.getElementById('nextBtn').disabled = page.last || page.totalPages === 0;
+            })
+            .catch(err => {
+                console.error("데이터 로드 실패:", err);
+            });
+    }
+
+    // 빈 검색어 방어 기능이 포함된 검색 함수
+    function searchBoard() {
+        const keywordInput = document.getElementById('searchKeyword');
+        const keyword = keywordInput.value.trim();
+
+        if (keyword === "") {
+            alert("검색어를 입력해주세요.");
+            keywordInput.focus();
+            return;
+        }
+
+        currentKeyword = keyword;
+        currentPage = 0; // 검색 시 첫 페이지로 이동
+        getBoards();
+    }
+
+    // 페이지 이동
+    function changePage(delta) {
+        currentPage += delta;
+        getBoards();
+    }
+
+    // 글쓰기 이동 시 로그인 체크 (nav.js의 window.currentUser 활용)
+    function goToWrite() {
+        if (!window.currentUser) {
+            alert("로그인이 필요한 서비스입니다.");
+            location.href = "/login";
+        } else {
+            location.href = "/write.html";
+        }
+    }
+</script>
+</body>
+</html>
