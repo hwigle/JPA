@@ -22,7 +22,6 @@ public class BoardService {
     public List<Board> findAll() { return boardRepository.findAll(); }
     public void save(Board board) { boardRepository.save(board); }
     public Board findById(Long id) { return boardRepository.findById(id).orElseThrow(); }
-    public void delete(Long id) { boardRepository.deleteById(id); }
     
     public Page<Board> getList(int page, String keyword) {
         // 0번 페이지부터, 10개씩, ID 역순(최신순)으로 정렬
@@ -35,9 +34,14 @@ public class BoardService {
     }    
     
     @Transactional // 데이터 수정을 위해 추가
-    public void update(Long id, Board boardRequest) {
+    public void update(Long id, Board boardRequest, String username) {
         Board board = boardRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 없습니다."));
+
+        // 권한 체크: 게시글 작성자의 username과 현재 로그인한 username 비교
+        if (!board.getMember().getUsername().equals(username)) {
+            throw new RuntimeException("수정 권한이 없습니다.");
+        }
         
         // 제목과 내용만 수정
         board.setTitle(boardRequest.getTitle());
@@ -46,5 +50,18 @@ public class BoardService {
         // @Transactional이 있으면 save()를 호출하지 않아도 DB에 반영되지만, 
         // 명시적으로 보여주기 위해 호출해도 무방합니다.
         boardRepository.save(board);
+    }
+    
+    @Transactional
+    public void delete(Long id, String username) {
+        Board board = boardRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 없습니다."));
+
+        // 권한 체크
+        if (!board.getMember().getUsername().equals(username)) {
+            throw new RuntimeException("삭제 권한이 없습니다.");
+        }
+
+        boardRepository.delete(board);
     }
 }

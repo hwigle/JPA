@@ -9,7 +9,7 @@ import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty; // import 확인
 
 @Entity
 @Getter @Setter
@@ -21,7 +21,8 @@ public class Member {
     @Column(unique = true)
     private String username;
 
-    @JsonIgnore // JSON 결과에서 비밀번호 필드를 제외시킵니다.
+    // 저장할 때(Write)는 읽어오고, 정보를 보낼 때는 제외합니다.
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     private String nickname;

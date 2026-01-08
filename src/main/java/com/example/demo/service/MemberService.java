@@ -3,6 +3,9 @@ package com.example.demo.service;
 import com.example.demo.domain.Member;
 import com.example.demo.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Optional;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,14 +19,16 @@ public class MemberService {
 
     @Transactional
     public void join(Member member) {
-        // 1. 비밀번호 암호화
+        // 1. 이미 존재하는 아이디인지 확인
+        Optional<Member> findMember = memberRepository.findByUsername(member.getUsername());
+        if (findMember.isPresent()) {
+            throw new IllegalStateException("이미 존재하는 아이디입니다.");
+        }
+
+        // 2. 비밀번호 암호화 및 저장 (기존 로직)
         String encodedPassword = passwordEncoder.encode(member.getPassword());
         member.setPassword(encodedPassword);
-        
-        // 2. 기본 권한 설정 (ROLE_USER)
         member.setRole("ROLE_USER");
-        
-        // 3. 저장
         memberRepository.save(member);
     }
 }

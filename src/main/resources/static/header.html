@@ -1,0 +1,21 @@
+<div class="user-bar d-flex justify-content-between align-items-center mb-5 pb-2" style="border-bottom: 1px solid #eee;">
+    <div class="d-flex align-items-center">
+        <h4 class="m-0 fw-bold me-5" onclick="location.href='/'" style="cursor:pointer; color: #0d6efd;">
+            🚀 JPA Community
+        </h4>
+        <nav>
+            <a href="/" class="text-decoration-none text-secondary fw-medium hover-dark">자유게시판</a>
+        </nav>
+    </div>
+
+    <div id="auth-zone" class="small">
+        <div id="logout-status">
+            <a href="/login" class="text-decoration-none text-dark me-3">로그인</a>
+            <a href="/join.html" class="text-decoration-none text-dark">회원가입</a>
+        </div>
+        <div id="login-status" style="display: none;">
+            <span class="me-3"><b id="header-welcome-msg" class="text-dark"></b>님 환영합니다</span>
+            <button class="btn btn-sm btn-outline-danger border-0" onclick="location.href='/logout'">로그아웃</button>
+        </div>
+    </div>
+</div>

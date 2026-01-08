@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>상세보기</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 50px 0; background-color: #f8f9fa; }
+        .container { max-width: 850px; background: white; padding: 40px; border-radius: 15px; }
+        .post-content { min-height: 250px; white-space: pre-wrap; margin: 30px 0; border-top: 1px solid #eee; padding-top: 20px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="common-header"></div>
+
+    <div class="post-header mb-4">
+        <h2 id="title" class="fw-bold mb-3"></h2>
+        <div class="d-flex justify-content-between text-muted">
+            <div>
+                <span class="me-3">작성자: <b id="nickname" class="text-dark"></b></span>
+                <span class="me-3" id="createDate"></span>
+                <span>조회수: <b id="hits" class="text-dark"></b></span>
+            </div>
+        </div>
+    </div>
+
+    <div id="content" class="post-content"></div>
+
+    <div class="d-flex justify-content-between mb-5">
+        <button class="btn btn-outline-secondary" onclick="location.href='/'">목록으로</button>
+        <div id="owner-buttons" style="display: none;">
+            <button class="btn btn-warning me-1" onclick="location.href=`/edit.html?id=${boardId}`">수정</button>
+            <button class="btn btn-danger" onclick="deleteBoard()">삭제</button>
+        </div>
+    </div>
+
+    <div class="comment-section">
+        <h5 class="fw-bold mb-4">댓글 (<span id="commentCount">0</span>)</h5>
+        <div id="commentList" class="mb-4"></div>
+        <div id="commentWriteForm" style="display: none;">
+            <div class="input-group">
+                <textarea id="commentContent" class="form-control" rows="2"></textarea>
+                <button class="btn btn-primary px-4" onclick="saveComment()">등록</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/nav.js"></script>
+<script>
+    const boardId = new URLSearchParams(window.location.search).get('id');
+
+    async function loadDetail() {
+        const res = await fetch(`/api/boards/${boardId}`);
+        const board = await res.json();
+        
+        document.getElementById('title').innerText = board.title;
+        document.getElementById('nickname').innerText = board.member ? board.member.nickname : '익명';
+        document.getElementById('hits').innerText = board.hits;
+        document.getElementById('createDate').innerText = board.createDate ? board.createDate.replace('T', ' ').substring(0, 16) : '';
+        document.getElementById('content').innerText = board.content;
+
+        if (window.currentUser && board.member && window.currentUser.username === board.member.username) {
+            document.getElementById('owner-buttons').style.display = 'block';
+        }
+        
+        if (window.currentUser) document.getElementById('commentWriteForm').style.display = 'block';
+        renderComments(board.comments || []);
+    }
+
+    function renderComments(comments) {
+        const list = document.getElementById('commentList');
+        document.getElementById('commentCount').innerText = comments.length;
+        list.innerHTML = comments.map(c => `
+            <div class="border-bottom py-3">
+                <div class="d-flex justify-content-between small text-muted">
+                    <b>${c.member.nickname}</b> <span>${c.createDate.replace('T', ' ').substring(0, 16)}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <div>${c.content}</div>
+                    ${window.currentUser && window.currentUser.username === c.member.username ? 
+                        `<button class="btn btn-sm text-danger" onclick="deleteComment(${c.id})">삭제</button>` : ''}
+                </div>
+            </div>`).join('');
+    }
+
+    function saveComment() {
+        const content = document.getElementById('commentContent').value;
+        fetch(`/api/comments/${boardId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ content })
+        }).then(() => location.reload());
+    }
+
+    function deleteBoard() {
+        if (confirm("삭제하시겠습니까?")) {
+            fetch(`/api/boards/${boardId}`, { method: 'DELETE' }).then(() => location.href = "/");
+        }
+    }
+
+    // 헤더 로딩 후 데이터 로드
+    window.addEventListener('load', loadDetail);
+</script>
+</body>
+</html>
