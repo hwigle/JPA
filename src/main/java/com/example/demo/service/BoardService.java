@@ -1,0 +1,50 @@
+package com.example.demo.service;
+
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.demo.domain.Board;
+import com.example.demo.repository.BoardRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class BoardService {
+    private final BoardRepository boardRepository;
+
+    public List<Board> findAll() { return boardRepository.findAll(); }
+    public void save(Board board) { boardRepository.save(board); }
+    public Board findById(Long id) { return boardRepository.findById(id).orElseThrow(); }
+    public void delete(Long id) { boardRepository.deleteById(id); }
+    
+    public Page<Board> getList(int page, String keyword) {
+        // 0번 페이지부터, 10개씩, ID 역순(최신순)으로 정렬
+        Pageable pageable = PageRequest.of(page, 10, Sort.by("id").descending());
+        
+        if (keyword == null || keyword.isEmpty()) {
+            return boardRepository.findAll(pageable);
+        }
+        return boardRepository.findByTitleContaining(keyword, pageable);
+    }    
+    
+    @Transactional // 데이터 수정을 위해 추가
+    public void update(Long id, Board boardRequest) {
+        Board board = boardRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 게시글이 없습니다."));
+        
+        // 제목과 내용만 수정
+        board.setTitle(boardRequest.getTitle());
+        board.setContent(boardRequest.getContent());
+        
+        // @Transactional이 있으면 save()를 호출하지 않아도 DB에 반영되지만, 
+        // 명시적으로 보여주기 위해 호출해도 무방합니다.
+        boardRepository.save(board);
+    }
+}
