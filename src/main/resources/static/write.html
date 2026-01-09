@@ -2,36 +2,79 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>새 글 쓰기</title>
+    <title>글쓰기</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 50px 0; background-color: #f8f9fa; }
+        .container { max-width: 700px; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+    </style>
 </head>
-<body class="bg-light">
-<div class="container py-5" style="max-width: 700px;">
-    <div id="common-header"></div>
-    <div class="bg-white p-4 rounded shadow-sm">
-        <h3 class="fw-bold mb-4">새 글 작성</h3>
-        <div class="mb-3">
-            <input type="text" id="title" class="form-control" placeholder="제목">
-        </div>
-        <div class="mb-3">
-            <textarea id="content" class="form-control" rows="10" placeholder="내용"></textarea>
-        </div>
-        <div class="d-flex justify-content-end gap-2">
-            <button class="btn btn-secondary" onclick="location.href='/'">취소</button>
-            <button class="btn btn-primary px-4" onclick="saveBoard()">등록</button>
-        </div>
+<body>
+
+<div class="container">
+    <h2 class="fw-bold mb-4">새 글 작성</h2>
+    
+    <div class="mb-3">
+        <label class="form-label">제목</label>
+        <input type="text" id="title" class="form-control" placeholder="제목을 입력하세요">
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">내용</label>
+        <textarea id="content" class="form-control" rows="10" placeholder="내용을 입력하세요"></textarea>
+    </div>
+
+    <div class="mb-4">
+        <label class="form-label fw-bold">📎 파일 첨부</label>
+        <input type="file" id="fileInput" class="form-control">
+        <div class="form-text">이미지, PDF, 문서 파일 등을 업로드할 수 있습니다.</div>
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <button class="btn btn-secondary me-2" onclick="location.href='/'">취소</button>
+        <button class="btn btn-primary px-4" onclick="saveBoard()">등록하기</button>
     </div>
 </div>
+
 <script src="/js/nav.js"></script>
 <script>
-    function saveBoard() {
+    async function saveBoard() {
         const title = document.getElementById('title').value;
         const content = document.getElementById('content').value;
-        fetch('/api/boards', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ title, content })
-        }).then(res => res.ok ? location.href='/' : alert("실패"));
+        const fileInput = document.getElementById('fileInput');
+
+        if(!title.trim() || !content.trim()) {
+            alert("제목과 내용을 모두 입력해주세요.");
+            return;
+        }
+
+        // 1. FormData 생성 (파일 전송 필수 도구)
+        const formData = new FormData();
+
+        // 2. 게시글 정보를 Blob(JSON) 형태로 추가
+        const boardData = { title: title, content: content };
+        formData.append("board", new Blob([JSON.stringify(boardData)], { type: "application/json" }));
+
+        // 3. 파일이 선택되었다면 추가
+        if (fileInput.files[0]) {
+            formData.append("file", fileInput.files[0]);
+        }
+
+        try {
+            const response = await fetch('/api/boards', {
+                method: 'POST',
+                body: formData // ⭐ 중요: FormData를 보낼 땐 Headers의 'Content-Type'을 직접 설정하지 마세요!
+            });
+
+            if (response.ok) {
+                alert("글이 성공적으로 등록되었습니다.");
+                location.href = "/";
+            } else {
+                alert("등록에 실패했습니다.");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+        }
     }
 </script>
 </body>

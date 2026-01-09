@@ -2,47 +2,65 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>상세보기</title>
+    <title>게시글 상세보기</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { padding: 50px 0; background-color: #f8f9fa; }
-        .container { max-width: 850px; background: white; padding: 40px; border-radius: 15px; }
-        .post-content { min-height: 250px; white-space: pre-wrap; margin: 30px 0; border-top: 1px solid #eee; padding-top: 20px; }
+        body { padding: 20px 0; background-color: #f8f9fa; }
+        .container { max-width: 800px; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .post-content { min-height: 200px; border-top: 1px solid #eee; padding: 30px 0; margin: 20px 0; line-height: 1.8; white-space: pre-wrap; }
+        .file-box { background: #f1f3f5; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        #likeBtn.active { background-color: #dc3545; color: white; border-color: #dc3545; }
+        .comment-item { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .comment-date { font-size: 0.75rem; color: #6c757d; }
     </style>
 </head>
 <body>
+
 <div class="container">
     <div id="common-header"></div>
 
-    <div class="post-header mb-4">
-        <h2 id="title" class="fw-bold mb-3"></h2>
-        <div class="d-flex justify-content-between text-muted">
+    <div class="mb-4">
+        <h2 id="title" class="fw-bold mb-3">로딩 중...</h2>
+        <div class="d-flex justify-content-between text-muted small">
             <div>
-                <span class="me-3">작성자: <b id="nickname" class="text-dark"></b></span>
-                <span class="me-3" id="createDate"></span>
-                <span>조회수: <b id="hits" class="text-dark"></b></span>
+                <span id="nickname" class="badge bg-light text-dark fw-normal me-2">작성자</span>
+                <span id="createDate">날짜</span>
             </div>
+            <div>조회수 <b id="hits">0</b></div>
         </div>
     </div>
 
-    <div id="content" class="post-content"></div>
+    <div id="content" class="post-content">내용을 불러오는 중입니다...</div>
 
-    <div class="d-flex justify-content-between mb-5">
-        <button class="btn btn-outline-secondary" onclick="location.href='/'">목록으로</button>
-        <div id="owner-buttons" style="display: none;">
-            <button class="btn btn-warning me-1" onclick="location.href=`/edit.html?id=${boardId}`">수정</button>
-            <button class="btn btn-danger" onclick="deleteBoard()">삭제</button>
-        </div>
+    <div id="fileSection" class="file-box" style="display: none;">
+        <span class="fw-bold small me-2">📎 첨부파일:</span>
+        <a id="fileLink" href="#" class="text-decoration-none fw-bold" download>파일명</a>
     </div>
 
-    <div class="comment-section">
-        <h5 class="fw-bold mb-4">댓글 (<span id="commentCount">0</span>)</h5>
-        <div id="commentList" class="mb-4"></div>
-        <div id="commentWriteForm" style="display: none;">
-            <div class="input-group">
-                <textarea id="commentContent" class="form-control" rows="2"></textarea>
-                <button class="btn btn-primary px-4" onclick="saveComment()">등록</button>
+    <div class="text-center my-5">
+        <button id="likeBtn" class="btn btn-outline-danger btn-lg rounded-pill px-4 shadow-sm" onclick="toggleLike()">
+            <span id="likeIcon">🤍</span> 좋아요 <span id="likeCount" class="badge bg-danger ms-2">0</span>
+        </button>
+    </div>
+
+    <div class="mt-5">
+        <h4 class="fw-bold mb-4">댓글 (<span id="commentCount">0</span>)</h4>
+        <div class="card mb-4 border-0 bg-light">
+            <div class="card-body">
+                <textarea id="commentInput" class="form-control mb-2" rows="3" placeholder="댓글을 남겨보세요."></textarea>
+                <div class="d-flex justify-content-end">
+                    <button class="btn btn-primary px-4" onclick="saveComment()">등록</button>
+                </div>
             </div>
+        </div>
+        <div id="commentList"></div>
+    </div>
+
+    <div class="d-flex justify-content-between mt-5">
+        <button class="btn btn-secondary px-4" onclick="location.href='/'">목록으로</button>
+        <div id="authButtons" style="display: none;">
+            <button class="btn btn-outline-dark me-2" onclick="goToEdit()">수정</button>
+            <button class="btn btn-outline-danger" onclick="deletePost()">삭제</button>
         </div>
     </div>
 </div>
@@ -50,58 +68,127 @@
 <script src="/js/nav.js"></script>
 <script>
     const boardId = new URLSearchParams(window.location.search).get('id');
+    window.currentBoard = null; // 게시글 데이터를 전역에 보관
 
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!boardId) return;
+        loadDetail();
+        fetchLikeCount();
+        checkLikeStatus();
+        fetchComments();
+    });
+
+    // 1. 게시글 상세 정보 로드
     async function loadDetail() {
-        const res = await fetch(`/api/boards/${boardId}`);
-        const board = await res.json();
-        
-        document.getElementById('title').innerText = board.title;
-        document.getElementById('nickname').innerText = board.member ? board.member.nickname : '익명';
-        document.getElementById('hits').innerText = board.hits;
-        document.getElementById('createDate').innerText = board.createDate ? board.createDate.replace('T', ' ').substring(0, 16) : '';
-        document.getElementById('content').innerText = board.content;
+        try {
+            const res = await fetch(`/api/boards/${boardId}`);
+            const b = await res.json();
+            window.currentBoard = b; // 전역 변수에 저장
 
-        if (window.currentUser && board.member && window.currentUser.username === board.member.username) {
-            document.getElementById('owner-buttons').style.display = 'block';
-        }
-        
-        if (window.currentUser) document.getElementById('commentWriteForm').style.display = 'block';
-        renderComments(board.comments || []);
+            document.getElementById('title').innerText = b.title;
+            document.getElementById('content').innerText = b.content;
+            document.getElementById('nickname').innerText = b.member?.nickname || '익명';
+            document.getElementById('hits').innerText = b.hits;
+            document.getElementById('createDate').innerText = b.createDate ? b.createDate.substring(0, 10) : '-';
+
+            // 파일 정보 표시
+            if (b.storedFileName) {
+                const fileSection = document.getElementById('fileSection');
+                const fileLink = document.getElementById('fileLink');
+                fileSection.style.display = 'block';
+                fileLink.href = `/files/${b.storedFileName}`;
+                fileLink.innerText = b.originFileName;
+                fileLink.setAttribute('download', b.originFileName);
+            }
+
+            // ⭐ 작성자 본인 확인 함수 실행
+            checkOwnership();
+        } catch (e) { console.error(e); }
     }
 
-    function renderComments(comments) {
-        const list = document.getElementById('commentList');
+    // ⭐ 수정/삭제 버튼 노출 로직 (비동기 대응)
+    function checkOwnership() {
+        // window.currentUser가 아직 로딩 전(nav.js 작업 중)이라면 0.1초 뒤에 다시 확인
+        if (typeof window.currentUser === 'undefined') {
+            setTimeout(checkOwnership, 100);
+            return;
+        }
+
+        const b = window.currentBoard;
+        // 로그인한 유저가 있고, 게시글 작성자가 있을 때 ID 비교 (== 사용)
+        if (window.currentUser && b && b.member && window.currentUser.id == b.member.id) {
+            document.getElementById('authButtons').style.display = 'block';
+        }
+    }
+
+    // 2. 댓글 목록 로드
+    async function fetchComments() {
+        const res = await fetch(`/api/comments/${boardId}`);
+        if (!res.ok) return;
+        const comments = await res.json();
+        const listDiv = document.getElementById('commentList');
         document.getElementById('commentCount').innerText = comments.length;
-        list.innerHTML = comments.map(c => `
-            <div class="border-bottom py-3">
-                <div class="d-flex justify-content-between small text-muted">
-                    <b>${c.member.nickname}</b> <span>${c.createDate.replace('T', ' ').substring(0, 16)}</span>
+        
+        listDiv.innerHTML = comments.map(c => `
+            <div class="comment-item">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="fw-bold small">${c.member.nickname}</span>
+                    <span class="comment-date">${c.createDate}</span>
                 </div>
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>${c.content}</div>
-                    ${window.currentUser && window.currentUser.username === c.member.username ? 
+                    ${(window.currentUser && window.currentUser.id == c.member.id) ? 
                         `<button class="btn btn-sm text-danger" onclick="deleteComment(${c.id})">삭제</button>` : ''}
                 </div>
-            </div>`).join('');
+            </div>
+        `).join('') || '<p class="text-muted">첫 댓글을 남겨보세요!</p>';
     }
 
-    function saveComment() {
-        const content = document.getElementById('commentContent').value;
-        fetch(`/api/comments/${boardId}`, {
+    // 3. 댓글 저장/삭제
+    async function saveComment() {
+        if (!window.currentUser) return alert("로그인이 필요합니다.");
+        const content = document.getElementById('commentInput').value;
+        if (!content.trim()) return alert("내용을 입력하세요.");
+        const res = await fetch(`/api/comments/${boardId}`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content })
-        }).then(() => location.reload());
+        });
+        if (res.ok) { document.getElementById('commentInput').value = ''; fetchComments(); }
+    }
+    async function deleteComment(id) { if (confirm("삭제할까요?")) { await fetch(`/api/comments/${id}`, { method: 'DELETE' }); fetchComments(); } }
+
+    // 4. 좋아요 관련
+    async function fetchLikeCount() {
+        const res = await fetch(`/api/boards/${boardId}/likes/count`);
+        const data = await res.json();
+        const count = (typeof data === 'object') ? data.count : data;
+        document.getElementById('likeCount').innerText = count || 0;
+    }
+    async function toggleLike() {
+        if (!window.currentUser) return location.href = "/login";
+        const res = await fetch(`/api/boards/${boardId}/like`, { method: 'POST' });
+        if (res.ok) { updateLikeUI(await res.json()); fetchLikeCount(); }
+    }
+    async function checkLikeStatus() {
+        if (!window.currentUser) return;
+        const res = await fetch(`/api/boards/${boardId}/like/status`);
+        if (res.ok) updateLikeUI(await res.json());
+    }
+    function updateLikeUI(isLiked) {
+        const btn = document.getElementById('likeBtn');
+        btn.classList.toggle('active', isLiked);
+        document.getElementById('likeIcon').innerText = isLiked ? '❤️' : '🤍';
     }
 
-    function deleteBoard() {
-        if (confirm("삭제하시겠습니까?")) {
-            fetch(`/api/boards/${boardId}`, { method: 'DELETE' }).then(() => location.href = "/");
+    // 5. 게시글 수정/삭제 버튼 동작
+    function goToEdit() { location.href = `/edit.html?id=${boardId}`; }
+    async function deletePost() {
+        if (confirm("게시글을 삭제하시겠습니까?")) {
+            await fetch(`/api/boards/${boardId}`, { method: 'DELETE' });
+            location.href = "/";
         }
     }
-
-    // 헤더 로딩 후 데이터 로드
-    window.addEventListener('load', loadDetail);
 </script>
 </body>
 </html>

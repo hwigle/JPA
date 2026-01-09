@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -10,7 +11,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.domain.Board;
+import com.example.demo.domain.BoardLike;
+import com.example.demo.domain.Member;
+import com.example.demo.repository.BoardLikeRepository;
 import com.example.demo.repository.BoardRepository;
+import com.example.demo.repository.MemberRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class BoardService {
     private final BoardRepository boardRepository;
+    private final MemberRepository memberRepository;
+    private final BoardLikeRepository boardLikeRepository;
 
     public List<Board> findAll() { return boardRepository.findAll(); }
     public void save(Board board) { boardRepository.save(board); }
@@ -63,5 +70,26 @@ public class BoardService {
         }
 
         boardRepository.delete(board);
+    }
+    
+    @Transactional
+    public boolean toggleLike(Long boardId, String username) {
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글이 없습니다."));
+        Member member = memberRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("회원이 없습니다."));
+
+        // 이미 좋아요를 눌렀는지 확인
+        Optional<BoardLike> alreadyLike = boardLikeRepository.findByMemberAndBoard(member, board);
+
+        if (alreadyLike.isPresent()) {
+            // 이미 있다면: 좋아요 취소 (삭제)
+            boardLikeRepository.delete(alreadyLike.get());
+            return false; // 취소됨을 알림
+        } else {
+            // 없다면: 좋아요 추가 (저장)
+            boardLikeRepository.save(BoardLike.createLike(member, board));
+            return true; // 추가됨을 알림
+        }
     }
 }

@@ -35,3 +35,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+
+# User uploaded files
+/src/main/resources/static/files/*
+!/src/main/resources/static/files/.gitkeep

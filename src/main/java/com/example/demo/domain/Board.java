@@ -3,6 +3,7 @@ package com.example.demo.domain;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.hibernate.annotations.Formula;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -45,5 +46,12 @@ public class Board {
 	 private List<Comment> comments;
 	 
 	 @Column(columnDefinition = "integer default 0", nullable = false)
-    private int hits; // 조회수 필드 추가
+    private int hits; // 조회수 필드
+	 
+	//DB 레벨에서 좋아요 개수를 계산해서 가져오는 가상 컬럼
+    @Formula("(SELECT count(*) FROM board_like bl WHERE bl.board_id = id)")
+    private int likeCount;
+    
+    private String originFileName; // 사용자가 올린 파일명 (예: 보노보노.jpg)
+    private String storedFileName; // 서버에 저장된 실제 파일명 (예: 20260109_uuid.jpg)
 }

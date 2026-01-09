@@ -1,8 +1,10 @@
 package com.example.demo.controller;
 
 import java.security.Principal;
+import java.util.List;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,5 +45,11 @@ public class CommentController {
         if (comment.getMember().getUsername().equals(principal.getName())) {
             commentRepository.delete(comment);
         }
+    }
+    
+    @GetMapping("/{boardId}")
+    public List<Comment> getComments(@PathVariable("boardId") Long boardId) {
+        // 특정 게시글의 댓글만 최신순으로 가져옵니다.
+        return commentRepository.findByBoardIdOrderByIdDesc(boardId);
     }
 }
