@@ -54,4 +54,8 @@ public class Board {
     
     private String originFileName; // 사용자가 올린 파일명 (예: 보노보노.jpg)
     private String storedFileName; // 서버에 저장된 실제 파일명 (예: 20260109_uuid.jpg)
+    
+    // 댓글 개수를 실시간으로 계산하는 가상 컬럼 추가
+    @Formula("(SELECT count(*) FROM comment c WHERE c.board_id = id)")
+    private int commentCount;
 }

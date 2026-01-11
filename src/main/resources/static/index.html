@@ -32,6 +32,7 @@
                 <th style="width: 120px;">작성자</th>
                 <th style="width: 130px;">작성일</th>
                 <th style="width: 80px;">조회수</th>
+				<th style="width: 10%">추천</th> </tr>
             </tr>
         </thead>
         <tbody id="board-body">
@@ -65,7 +66,8 @@
             if (e.key === 'Enter') searchBoard();
         });
     });
-
+	
+	// 목록 조회 함수
 	function getBoards() {
 	    fetch(`/api/boards?page=${currentPage}&keyword=${encodeURIComponent(currentKeyword)}`)
 	        .then(res => res.json())
@@ -78,27 +80,39 @@
 	                return;
 	            }
 
-	            // ⭐ 여기서부터 반복문이 시작됩니다.
 	            page.content.forEach(b => {
-	                // 이제 'b'는 리스트에서 꺼내온 '게시글 한 개'를 의미하므로 사용 가능합니다!
+	                // 이제 'b'는 리스트에서 꺼내온 '게시글 한 개'를 의미
 	                const nickname = b.member ? b.member.nickname : '익명';
 	                const dateStr = b.createDate ? b.createDate.split('T')[0] : '-';
 	                
-	                // ⭐ 좋아요 배지 생성 로직을 여기로 이동!
-	                const likeBadge = (b.likeCount > 0) 
-	                    ? `<span class="text-danger small ms-1" style="font-weight: bold;">❤️${b.likeCount}</span>` 
+					// 파일 아이콘 생성 
+	                // b.originFileName이 있으면 클립 아이콘을, 없으면 빈 칸
+	                const fileIcon = b.originFileName 
+	                    ? `<span class="text-muted small ms-1" title="첨부파일: ${b.originFileName}">📎</span>` 
 	                    : '';
+						
+					// 댓글 개수 배지 추가
+				    // 댓글이 0개보다 많을 때만 [개수] 형태로 표시
+				    const commentBadge = (b.commentCount > 0)
+				        ? `<span class="text-primary small ms-1" style="font-weight: bold;">[${b.commentCount}]</span>`
+				        : '';
 	                
+					// 2. ⭐ 추천수 컬럼용 데이터 생성
+				    const likeColor = b.likeCount > 0 ? 'text-danger' : 'text-secondary';
+				    const likeContent = b.likeCount > 0 ? `❤️ ${b.likeCount}` : `0`;
+						
 	                tbody.innerHTML += `
 	                    <tr class="text-center">
 	                        <td>${b.id}</td>
 	                        <td class="text-start ps-4">
 	                            <a href="/detail.html?id=${b.id}" class="post-link">${b.title}</a>
-	                            ${likeBadge}
+								${commentBadge}
+								${fileIcon}
 	                        </td>
 	                        <td><span class="badge bg-light text-dark fw-normal">${nickname}</span></td>
 	                        <td class="text-muted small">${dateStr}</td>
 	                        <td class="fw-bold text-secondary">${b.hits}</td>
+							<td class="${likeColor} fw-bold">${likeContent}</td>
 	                    </tr>`;
 	            });
 
